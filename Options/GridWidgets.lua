@@ -210,3 +210,30 @@ do
 
 	AceGUI:RegisterWidgetType(Type, Constructor, Version)
 end
+
+-------------------------------------------------------------------------------------------------
+--
+-------------------------------------------------------------------------------------------------
+
+do
+	local Type = "Grid2OptionsTracker"
+
+	local function OnAcquire(self)
+		self.frame:SetSize(1,0.1)
+		print("Acquire", GetTime())
+	end
+
+	local function OnRelease(self)
+		print("Release", GetTime())
+	end
+	
+	local function SetText(self)
+	end
+	
+	AceGUI:RegisterWidgetType( Type, function()
+		local frame = CreateFrame("Frame", nil, UIParent)
+		frame:Hide()
+		local widget = { frame = frame, type = Type, OnRelease = OnRelease, OnAcquire = OnAcquire, SetText = SetText }
+		return AceGUI:RegisterAsWidget(widget)
+	end , 1)
+end

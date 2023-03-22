@@ -42,6 +42,7 @@ local Grid2Options = {
 				desc = L["statuses"],
 				args = {},
 			},
+			 __load = { order = 0, type = "header", name = "", dialogControl = "Grid2OptionsTracker" },
 		},
 	},
 	typeMakeOptions = {},
