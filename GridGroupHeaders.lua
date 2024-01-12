@@ -500,7 +500,7 @@ hideEmptyUnits = true|nil
 --]]
 do
 	--Forze size changed event to refresh decoration visibility
-	local function TriggerSizeChangedEvent(self)
+	local function FireSizeChangedEvent(self)
 		if self:GetAttribute('hideEmptyUnits') then
 			local func = self:GetScript("OnSizeChanged")
 			if func then
@@ -517,7 +517,7 @@ do
 			end
 			index = index + 1; unitButton = self[index]
 		end
-		TriggerSizeChangedEvent(self)
+		FireSizeChangedEvent(self)
 	end
 
 	-- event register management
@@ -533,12 +533,16 @@ do
 
 	local function RegisterEvents(self, unitTable)
 		local bossUnits, arenaUnits, normalUnits
-		self.buttonTarget, self.buttonFocus = nil, nil
+		self.buttonTarget, self.buttonTargetTarget, self.buttonFocus, self.buttonFocusTarget = nil, nil, nil , nil
 		for i, unit in ipairs(unitTable) do
 			if unit=='target' then
 				self.buttonTarget = self[i]
 			elseif unit=='focus' then
 				self.buttonFocus = self[i]
+			elseif unit=='targettarget' then
+				self.buttonTargetTarget = self[i]
+			elseif unit=='focustarget' then
+				self.buttonFocusTarget = self[i]
 			elseif strfind(unit,"^boss") then
 				bossUnits = true
 			elseif strfind(unit,"^arena") then
@@ -548,8 +552,10 @@ do
 			end
 		end
 		SetRegisterEvent( self, self.buttonTarget, 'PLAYER_TARGET_CHANGED' )
+		SetRegisterEvent( self, self.buttonTargetTarget, 'PLAYER_TARGET_CHANGED' )
 		SetRegisterEvent( self, self.buttonFocus, 'PLAYER_FOCUS_CHANGED' )
-		SetRegisterEvent( self, self.buttonTarget or self.buttonFocus, 'PLAYER_ENTERING_WORLD' )
+		SetRegisterEvent( self, self.buttonFocusTarget, 'PLAYER_FOCUS_CHANGED' )
+		SetRegisterEvent( self, self.buttonTarget or self.buttonFocus or self.buttonTargetTarget or self.buttonFocusTarget, 'PLAYER_ENTERING_WORLD' )
 		SetRegisterEvent( self, bossUnits, 'INSTANCE_ENCOUNTER_ENGAGE_UNIT' )
 		SetRegisterEvent( self, arenaUnits, 'ARENA_OPPONENT_UPDATE' )
 		SetRegisterEvent( self, normalUnits, 'GROUP_ROSTER_UPDATE' )
@@ -590,13 +596,21 @@ do
 		end
 	end
 
+	local function FireStateChanged(button)
+		if button then
+			button:OnUnitStateChanged()
+		end
+	end
+
 	local function OnEvent(self, event)
 		if event=='PLAYER_TARGET_CHANGED' then
-			self.buttonTarget:OnUnitStateChanged()
-			TriggerSizeChangedEvent(self)
+			FireStateChanged(self.buttonTarget)
+			FireStateChanged(self.buttonTargetTarget)
+			FireSizeChangedEvent(self)
 		elseif event=='PLAYER_FOCUS_CHANGED' then
-			self.buttonFocus:OnUnitStateChanged()
-			TriggerSizeChangedEvent(self)
+			FireStateChanged(self.buttonFocus)
+			FireStateChanged(self.buttonFocusTarget)
+			FireSizeChangedEvent(self)
 		elseif event=='INSTANCE_ENCOUNTER_ENGAGE_UNIT' then
 			self:RegisterEvent('PLAYER_REGEN_ENABLED')
 			RefreshButtons(self, "^boss")
@@ -605,8 +619,10 @@ do
 		elseif event=='ARENA_OPPONENT_UPDATE' then
 			RefreshButtons(self, "^arena")
 		elseif event=='PLAYER_ENTERING_WORLD' then
-			if self.buttonTarget then self.buttonTarget:OnUnitStateChanged() end
-			if self.buttonFocus  then self.buttonFocus:OnUnitStateChanged() end
+			FireStateChanged(self.buttonTarget)
+			FireStateChanged(self.buttonFocus)
+			FireStateChanged(self.buttonTargetTarget)
+			FireStateChanged(self.buttonFocusTarget)
 		else -- GROUP_ROSTER_UPDATE
 			RefreshButtons(self)
 		end

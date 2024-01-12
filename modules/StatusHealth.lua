@@ -195,7 +195,7 @@ local EnableBrokenBossesFix, DisableBrokenBossesFix
 do
 	local timer, registererd
 	local rosterUnits = {}
-	local brokenUnits = { boss6 = true, boss7 = true, boss8 = true }
+	local brokenUnits = { boss6 = true, boss7 = true, boss8 = true, targettarget = true, focustarget = true }
 
 	local function Health_UpdateEvent()
 		for unit in next,rosterUnits do
@@ -207,7 +207,7 @@ do
 		if brokenUnits[unit] and not rosterUnits[unit] then
 			rosterUnits[unit] = true
 			if not timer then
-				timer = Grid2:CreateTimer( Health_UpdateEvent, 0.5 )
+				timer = Grid2:CreateTimer( Health_UpdateEvent, 0.25 )
 			end
 		end
 	end
