@@ -743,7 +743,6 @@ function Grid2Layout:UpdateFramesSizeForHeader(header)
 end
 
 function Grid2Layout:UpdateFramesSize()
-	print("UpdateFramesSize!!!")
 	local modified
 	for _,header in ipairs(self.groupsUsed) do
 		modified = self:UpdateFramesSizeForHeader(header) or modified
