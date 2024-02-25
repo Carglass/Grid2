@@ -23,7 +23,7 @@ local groupType
 local grouped_units = Grid2.grouped_units
 local playerClass = Grid2.playerClass
 
-local isRangeAvail = Grid2.isWrath
+local isRangeAvail, getHostile, getFriendly = not Grid2.isRangeRestricted, nil, nil
 
 -------------------------------------------------------------------------
 -- CheckInteractDistance() replacements
@@ -31,7 +31,6 @@ local isRangeAvail = Grid2.isWrath
 
 if not isRangeAvail then -- vanilla or retail
 	-- range spells data
-	local getHostile, getFriendly
 	local function IVS(spellID)	return IsPlayerSpell(spellID) and spellID end
 	if Grid2.isWoW90 then -- retail
 		if playerClass == 'DRUID' then
@@ -251,12 +250,24 @@ function Range:GetPercent(unit)
 	return self.cache[unit] or self.curAlpha
 end
 
-function Range:GetRanges()
+function Range:IsActive(unit)
+	return not self.cache[unit]
+end
+
+function Range:GetRanges() -- called from options
 	return Ranges, self.curRange, rezSpellID
 end
 
-function Range:IsActive(unit)
-	return not self.cache[unit]
+function Range:GetRangeSpells(range) -- called from options
+	local nrange = tonumber(range)
+	if not isRangeAvail then
+		if range=='heal' then
+			return true, rangeSpellID, getHostile()
+		elseif nrange==38 then
+			return true, getFriendly(), getHostile()
+		end
+	end
+	return nrange
 end
 
 function Range:OnEnable()
@@ -316,6 +327,7 @@ RangeAlt.Grid_GroupTypeChanged = Range.Grid_GroupTypeChanged
 RangeAlt.Grid_PlayerSpecChanged = Range.Grid_PlayerSpecChanged
 RangeAlt.Grid_UnitUpdated = Range.Grid_UnitUpdated
 RangeAlt.Grid_UnitLeft = Range.Grid_UnitLeft
+RangeAlt.GetRangeSpells = Range.GetRangeSpells
 RangeAlt.UpdateDB = Range.UpdateDB
 RangeAlt.OnEnable = Range.OnEnable
 RangeAlt.OnDisable = Range.OnDisable

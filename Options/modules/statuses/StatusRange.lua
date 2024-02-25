@@ -8,12 +8,29 @@ do
 	function GetRangeList(status)
 		list = {}
 		for range in pairs(status:GetRanges()) do
-			list[range] = tonumber(range) and string.format(L["%d yards"],tonumber(range)) or nil
+			local nrange = status:GetRangeSpells(range)
+			if nrange then
+				list[range] = (nrange==true) and L["Default"] or string.format(L["%d yards"],nrange)
+			end
 		end
 		list.heal = L['Heal Range']
 		list.spell = L['Spell Range']
 		GetRangeList = function() return list end
 		return list
+	end
+end
+
+local SPELL_YARDS_MASK = string.format("%%s (%s)",L["%d yards"])
+local FormatRangeSpells
+do
+	local SPELLS_MASK = string.format( "|cFF00ff00%s:|r %%s  |cFFff0000%s:|r %%s", L['Friendly'], L['Hostile'] )
+	local function Format(spellID)
+		local name, range, _
+		if spellID then name, _, _, _, _, range = GetSpellInfo(spellID) end
+		return name and string.format(SPELL_YARDS_MASK, name, range) or L['not available']
+	end
+	function FormatRangeSpells(friendly, hostile)
+		return string.format( SPELLS_MASK, Format(friendly), Format(hostile) )
 	end
 end
 
@@ -23,7 +40,6 @@ do
 	local IsPlayerSpell = IsPlayerSpell
 	local IsSpellInRange = IsSpellInRange
 	local customSpells = {}
-	local stringMask = string.format("%%s (%s)",L["%d yards"])
 	function GetPlayerSpells(status, hostile)
 		local rezSpellID = select(3, status:GetRanges())
 		wipe(customSpells)
@@ -33,12 +49,12 @@ do
 		   if type == 'SPELL' then
 			   local name, _, _, _, minRange, maxRange = GetSpellInfo(spellID)
 			   if maxRange>0 and maxRange<100 and spellID~=rezSpellID and IsPlayerSpell(spellID) and (hostile or IsSpellInRange(name, 'player')==1)  then
-					customSpells[spellID] = string.format(stringMask, name, maxRange)
+					customSpells[spellID] = string.format(SPELL_YARDS_MASK, name, maxRange)
 			   end
 			end
 		end
 		if rezSpellID and friendly then
-			customSpells[rezSpellID] = string.format(stringMask, GetSpellInfo(rezSpellID), 40)
+			customSpells[rezSpellID] = string.format(SPELL_YARDS_MASK, GetSpellInfo(rezSpellID), 40)
 		end
 		return customSpells
 	end
@@ -136,9 +152,18 @@ local function MakeRangeOptions(self, status, options, optionParams)
 		type = "description",
 		name = "\n",
 	}
+	options.spellsdesc = {
+		order = 60,
+		type = "description",
+		name = function()
+			local _, friendly, hostile = status:GetRangeSpells(status.curRange)
+			return FormatRangeSpells(friendly, hostile)
+		end,
+		hidden = function() return status:GetRangeSpells(status.curRange)~=true end,
+	}
 	options.friendlySpell = {
 		type = "select",
-		order = 60,
+		order = 65,
 		width = "double",
 		name = L["Spell for friendly units"],
 		desc = L["Spell to check the range of. The player must know the spell."],
